@@ -9,13 +9,21 @@
     "build": "vite build",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "dev-electron": " electron .",
-    "build-electron": "npm run build && electron-builder"
+    "dev-electron": "concurrently \"vite\" \"electron .\"",
+    "build-electron": "vite build && electron-builder"
+  },
+  "build": {
+    "extends": null,
+    "appId": "com.example.electron-cra",
+    "directories": {
+      "output": "build"
+    }
   },
   "dependencies": {
     "@electron/remote": "^2.1.2",
     "@hookform/resolvers": "^3.2.0",
     "axios": "^1.5.1",
+    "concurrently": "^8.2.2",
     "js-cookie": "^3.0.5",
     "moment": "^2.29.4",
     "react": "^18.2.0",
@@ -40,16 +48,6 @@
     "postcss": "^8.4.31",
     "tailwindcss": "^3.3.3",
     "vite": "^4.4.5"
-  },
-  "build": {
-    "extends": null,
-    "appId": "com.example.electron-cra",
-    "files": [
-      "dist/**/*",
-      "build/**/*",
-      "node_modules/**/*",
-      "package.json"
-    ]
   },
   "description": "This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.",
   "main": "electron.cjs",

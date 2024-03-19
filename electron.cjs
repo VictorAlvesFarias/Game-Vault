@@ -1,38 +1,46 @@
-const { app ,BrowserWindow } = require('electron')
-const remote = require('@electron/remote/main');
-const path = require("path")
+const path = require('path');
+const {app, BrowserWindow} = require('electron')
+const remote = require('@electron/remote/main')
 
 remote.initialize();
 
-let mainWindow;
+const proc = process;
+const dir = __dirname
 
+const window = {frame:null};
 const config = {
-  url:{
-    dev:'http://localhost:5173',
-    prod:`dist/index.html`
+  dev:{
+    url:'http://localhost:5173',
+  },
+  prod:{
+    url:`dist/index.html`,
   }
 }
 
 function createWindow() {
-    mainWindow = new BrowserWindow({
+
+    window.frame = new BrowserWindow({
       width: 800,
       height: 600,
       webPreferences: {
         nodeIntegration: true,
         enableRemoteModule: true,
-        preload: path.join(__dirname, 'preload.cjs'),
+        preload: path.join(dir, 'preload.cjs'),
       },
+      titleBarStyle:"default",
+      autoHideMenuBar: true,
     });
 
-    remote.enable(mainWindow.webContents);
+    remote.enable(window.frame.webContents);
 
-    mainWindow.loadURL(config.url.dev)
+    window.frame.loadURL(config.dev.url)
     .then(()=>{
       console.log("working")
+      window.frame.webContents.openDevTools()
     })
     .catch(()=>{
       console.log("error")  
-      mainWindow.loadFile(config.url.prod)
+      window.frame.loadFile(config.prod.url)
       .then(()=>{
         console.log("working");
       })
@@ -45,13 +53,13 @@ function createWindow() {
 app.on('ready', createWindow);
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
+  if (proc.platform !== 'darwin') {
     app.quit();
   }
 });
 
 app.on('activate', () => {
-  if (mainWindow === null) {
+  if (window.frame === null) {
     createWindow();
   }
 });
