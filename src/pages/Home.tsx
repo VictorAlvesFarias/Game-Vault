@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import ButtonDefault from '../styled-components/ButtonDefault';
 import SaveService, { SaveItem } from '../service/SaveService';
+import fs from 'fs'
 
 
 function Home() {
@@ -13,7 +14,7 @@ function Home() {
   const saveService = new SaveService() 
   const [saves, setSaves] = useState<string[]>([])
   const formSchema = z.object({
-    path: z.string().nonempty("Campo Obrigatório")
+    path: z.string()
   })
 
   const { handleSubmit, formState: { errors }, register } = useForm<z.infer<typeof formSchema>>(
@@ -22,16 +23,17 @@ function Home() {
     }
   );
   
-  function addSave(data) {
-    saveService.addSave(data.path)
+  async function addSave(data) {
+    //saveService.addSave(data.path)
+    console.log(saveService.getDirSize("C:/Users/victor.alves/Downloads/Nova pasta (2)/Save-Electron"))
   }
 
-  useEffect( ()=>{
+  useEffect(() => {
     saveService.getSaves().then((x:any)=>{
       setSaves(x)
     })
-  })
-
+  }, [])
+  
   return (
     <div className='flex flex-col '>
       <div className='flex flex-col gap-3'>
