@@ -35,6 +35,7 @@
     "zod": "^3.21.4"
   },
   "devDependencies": {
+    "@electron-forge/plugin-webpack": "^7.3.1",
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.7",
     "@vitejs/plugin-react": "^4.0.3",
