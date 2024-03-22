@@ -1,6 +1,7 @@
 const remote = require('@electron/remote')
 const { contextBridge } = require('electron')
 const fs = require('fs');
+const path = require('path');
 
 contextBridge.exposeInMainWorld('application', {
   status: () => {
@@ -14,6 +15,10 @@ contextBridge.exposeInMainWorld('application', {
   }
 })
 
-contextBridge.exposeInMainWorld('fs', {
-  ...fs
+contextBridge.exposeInMainWorld('node', {
+  fs:{...fs},
+  path:{...path},
+  stat:(path)=>{
+    return fs.statSync(path)
+  }
 })
