@@ -6,8 +6,6 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import ButtonDefault from '../styled-components/ButtonDefault';
 import SaveService, { SaveItem } from '../service/SaveService';
-import fs from 'fs'
-
 
 function Home() {
 
@@ -24,8 +22,7 @@ function Home() {
   );
   
   async function addSave(data) {
-    //saveService.addSave(data.path)
-    console.log(saveService.getDirSize("C:/Users/victor.alves/Downloads/Nova pasta (2)/Save-Electron"))
+    saveService.addSave(data.path)
   }
 
   useEffect(() => {
@@ -37,15 +34,20 @@ function Home() {
   return (
     <div className='flex flex-col '>
       <div className='flex flex-col gap-3'>
-        {saves.map((x:any)=>
-          <div className=' p-3 pt-6 rounded bg-zinc-100 flex flex-col relative gap-3'>
+        {saves?.map((x:any,i:any)=>
+          <div key={i} className=' p-3 pt-6 rounded bg-zinc-100 flex flex-col relative gap-3'>
             <div className='cursor-pointer flex justify-end gap-1 top-0 right-0 p-3 absolute'>
               <div className='w-1 h-1 rounded-full bg-zinc-400'></div>
               <div className='w-1 h-1 rounded-full bg-zinc-400'></div>
               <div className='w-1 h-1 rounded-full bg-zinc-400'></div>
             </div>
             <p>{x.saveLocal}</p>
-            <p className={`bg-green-300 w-fit rounded p-2`}>Status: Sincronizado</p>
+            { x.sync?
+              <p className={`bg-green-300 w-fit rounded p-2`}>Status: Sincronizado</p>
+              :
+              <p className={`bg-red-300 w-fit rounded p-2`}>Status: Não Sincronizado</p>
+            }
+
           </div>  
         )}
       </div>
