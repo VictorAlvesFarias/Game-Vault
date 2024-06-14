@@ -12,13 +12,24 @@ contextBridge.exposeInMainWorld('application', {
   },
   minimized: () => {
     remote.getCurrentWindow().minimize()
+  },
+  maximize: () => {
+    remote.getCurrentWindow().maximize()
+  },
+  minimizable: () => {
+    remote.getCurrentWindow().minimizable()
+  },
+  maximizable: () => {
+    remote.getCurrentWindow().maximizable()
+  },
+  isMaximizable: () => {
+    return remote.getCurrentWindow().isMaximizable()
   }
 })
 
 contextBridge.exposeInMainWorld('node', {
   fs:{...fs},
   path:{...path},
-  stat:(path)=>{
-    return fs.statSync(path)
-  }
+  dialog:{...remote.dialog},
+  isDirectory:async (param)=> (await fs.promises.stat(param)).isDirectory()
 })

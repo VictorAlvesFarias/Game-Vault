@@ -27,7 +27,7 @@ function createWindow() {
         enableRemoteModule: true,
         preload: path.join(dir, 'preload.cjs'),
       },
-      titleBarStyle:"default",
+      titleBarStyle:"hidden",
       autoHideMenuBar: true,
     });
 

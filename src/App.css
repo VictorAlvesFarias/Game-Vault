@@ -1,0 +1,12 @@
+.titlebar {
+    -webkit-app-region: drag;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  .rotating-div {
+    animation: spin 2s linear infinite; /* Define a animação */
+  }
