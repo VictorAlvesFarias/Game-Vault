@@ -20,7 +20,7 @@ export class SaveService {
         const saveContext = this.document();
         const folder = this.splitFolderName(originPath);
         const guid = uid()
-        const folderLocalSavePath = `./saves/${guid}`
+        const folderLocalSavePath = `./saves/${guid}/${folder}`
         const newSave = new SaveItem(
             folderLocalSavePath,
             originPath,
@@ -56,8 +56,8 @@ export class SaveService {
         const newSaveContext = this.document().filter(e => e.id != id);
         const save = this.getById(id);
 
-        await window.node.fs.promises.cp(save.savePathOrigin, `./trash/${save.id}/${save.saveName}`, { recursive: true });
-        await window.node.fs.promises.rmdir(save.saveLocal, { recursive: true });
+        await window.node.fs.promises.cp(save.saveLocal, `./trash/${save.id}/${save.saveName}`, { recursive: true });
+        await window.node.fs.promises.rmdir(`./saves/${save.id}`, { recursive: true });
         await window.node.fs.promises.writeFile('./saves/save.json', JSON.stringify(newSaveContext));
 
         return newSaveContext;
@@ -110,18 +110,22 @@ export class SaveService {
     public async sync(id){
         const saveContext = this.document();
         const save: SaveItem = this.getById(id);
-        const newSaveContext = saveContext.map(async(e) => {
-            if(e.id==id){
-                e.size = await this.getDirSize(save.savePathOrigin)
+        const newSaveSize = await this.getDirSize(save.savePathOrigin)
+        const newSaveContext = saveContext.map((e) => {
+            if (e.id === id) {
+                e.size = newSaveSize;
             }
-
-            return e
+            console.log(e);
+            return e;
         })
         if(save !=null){
+            save.size = newSaveSize
+            save.sync = true
             await this.delete(save.id)
-            await window.node.fs.promises.cp(save.savePathOrigin, save.saveLocal, { recursive: true });
+            await window.node.fs.promises.cp(save.savePathOrigin, `./saves/${save.id}/${save.saveName}`, { recursive: true });
             await window.node.fs.promises.writeFile('./saves/save.json', JSON.stringify(newSaveContext));
         }
+        return save  
     }
 }
 
