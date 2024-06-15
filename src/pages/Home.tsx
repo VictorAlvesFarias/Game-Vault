@@ -30,8 +30,14 @@ function Home({ starter }) {
     setSaves(updatedSaves);
 
     saveService.sync(item.id).then(e => {
-      updatedSaves[index].loading = false;
-      setSaves(updatedSaves);
+
+      updatedSaves.forEach((item,index) => {
+        if (e.id == item.id) {
+          updatedSaves[index].loading = false
+        }
+      })
+      
+      setSaves([...updatedSaves]);
     })
   }
 
@@ -52,6 +58,10 @@ function Home({ starter }) {
   useEffect(() => {
     handleGetSaves()
   }, [starter])
+
+  useEffect(() => {
+    console.log(saves)
+  }, [saves])
 
   return (
     <>
@@ -87,10 +97,10 @@ function Home({ starter }) {
                               <div onClick={() => handleSyncSave(x)} className='h-full p-2 hover:bg-zinc-100 hover:bg-opacity-10 cursor-pointer'>
                                 {
                                   x.loading ?
-                                  <RefreshCcw className='w-5 rotating-div' />:
-                                  <RefreshCcw className='w-5' />
+                                    <RefreshCcw className='w-5 rotating-div' /> :
+                                    <RefreshCcw className='w-5' />
                                 }
-      
+
                               </div>
                               <div onClick={() => handleDeleteSave(x.id)} className='h-full p-2 hover:bg-zinc-100 hover:bg-opacity-10 cursor-pointer'>
                                 <Trash className='w-5 cursor-pointer ' />
