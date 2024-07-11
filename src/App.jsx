@@ -3,7 +3,7 @@ import { HashRouter, Route, Routes } from 'react-router-dom';
 import Home from './pages/Home';
 import { ToastContainer } from 'react-toastify';
 import { Maximize2, Minus, X } from 'lucide-react';
-import electronService from './service/ElectronService';
+import electronService from './service/electron-service';
 import Add from './pages/Add';
 import { Link } from 'react-router-dom';
 
