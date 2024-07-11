@@ -107,7 +107,7 @@ export class SaveService {
         return window.node.dialog.showOpenDialog({ properties: ['openDirectory'] });
     }
 
-    public async sync(id){
+    public async sync(id) {
         const saveContext = this.document();
         const save: SaveItem = this.getById(id);
         const newSaveSize = await this.getDirSize(save.savePathOrigin)
@@ -118,14 +118,14 @@ export class SaveService {
             console.log(e);
             return e;
         })
-        if(save !=null){
+        if (save != null) {
             save.size = newSaveSize
             save.sync = true
             await this.delete(save.id)
             await window.node.fs.promises.cp(save.savePathOrigin, `./saves/${save.id}/${save.saveName}`, { recursive: true });
             await window.node.fs.promises.writeFile('./saves/save.json', JSON.stringify(newSaveContext));
         }
-        return save  
+        return save
     }
 }
 

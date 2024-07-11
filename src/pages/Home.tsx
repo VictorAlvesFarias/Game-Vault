@@ -3,9 +3,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Cpu, LoaderCircle, Maximize2, Minimize2, Minus, Plus, RefreshCcw, Trash, X } from 'lucide-react';
-import SaveService, { SaveItem } from '../service/SaveService';
-import saveService from '../service/SaveService';
-import electronService from '../service/ElectronService';
+import { SaveItem } from '../service/save-service';
+import saveService from '../service/save-service';
 
 
 function Home({ starter }) {
