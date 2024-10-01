@@ -34,15 +34,10 @@ export class SaveService {
         await window.node.fs.promises.cp(originPath, folderLocalSavePath, { recursive: true });
         await window.node.fs.promises.writeFile('./saves/save.json', JSON.stringify(saveContext));
     }
-
-    public async get(): Promise<SaveItem> {
+    public async get(): Promise<SaveItem[]> {
         try {
-            let saveContext = this.document().map(async (e: any) => {
+            let saveContext:Promise<SaveItem>[] = this.document().map(async (e: SaveItem) => {
                 const sync = e.size == await this.getDirSize(e.savePathOrigin);
-                // console.log(await this.getDirSize(e.savePathOrigin))
-                // console.log(e.size)
-                // console.log(e)
-                // console.log('---------------------------')
                 return { ...e, sync };
             });
 
@@ -51,7 +46,6 @@ export class SaveService {
             throw error;
         }
     }
-
     public async delete(id) {
         const newSaveContext = this.document().filter(e => e.id != id);
         const save = this.getById(id);
@@ -62,7 +56,6 @@ export class SaveService {
 
         return newSaveContext;
     }
-
     private async getDirSize(dirPath): Promise<number> {
         let size = 0;
         const files = await window.node.fs.promises.readdir(dirPath);
@@ -81,7 +74,6 @@ export class SaveService {
         }
         return size;
     }
-
     private document(): SaveItem[] {
         let saveContext = JSON.parse(
             window.node.fs.existsSync('./saves/save.json') ?
@@ -92,21 +84,17 @@ export class SaveService {
 
         return saveContext;
     }
-
     private getById(id) {
         const result = this.document()?.filter(e => e.id == id)[0];
         return result;
     }
-
     private splitFolderName(path) {
         const result = path.split('\\')[path.split('\\').length - 1];
         return result;
     }
-
     public selectFolder() {
         return window.node.dialog.showOpenDialog({ properties: ['openDirectory'] });
     }
-
     public async sync(id) {
         const saveContext = this.document();
         const save: SaveItem = this.getById(id);

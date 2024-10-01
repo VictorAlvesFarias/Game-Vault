@@ -118,10 +118,12 @@ function Home({ starter }) {
         <div className='flex gap-3 text-nowrap'>
           <p>Status:</p>
           {
-            saves.length > 0 && (saves.some(e => e.sync === false) ?
+            saves.length > 0 ? (saves.some(e => e.sync === false) ?
               <p className=' text-red-500 bg-opacity-25'>Existem arquivos desincronizados</p>
               :
-              <p className=' text-green-500 bg-opacity-25'>Todos arquivos sincronizados</p>)
+              <p className=' text-green-500 bg-opacity-25'>Todos arquivos sincronizados</p>) 
+              :
+              <p className=''>Sem arquivos</p>
           }
         </div>
         <div className='titlebar w-full h-full'>
