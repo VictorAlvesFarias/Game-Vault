@@ -6,7 +6,6 @@ import saveService from '../service/save-service';
 import { useNavigate } from 'react-router-dom';
 import { LoaderCircle } from 'lucide-react';
 
-
 function Add() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState({
@@ -35,7 +34,7 @@ function Add() {
     <div className='w-full h-full flex items-center justify-center'>
       {
         loading.add ?
-          <LoaderCircle className='rotating-div' ></LoaderCircle>
+          <LoaderCircle className={"rotating-div"} ></LoaderCircle>
           :
           <form className='flex flex-col gap-3 items-center' onSubmit={handleSubmit(handleAddSave)}>
             <input {...register("name")} type="text" placeholder='Nome do save' className=' w-full bg-transparent flex items-center border border-zinc-700 outline-none p-1 px-3 rounded' />
