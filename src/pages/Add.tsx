@@ -5,13 +5,18 @@ import { z } from 'zod';
 import saveService from '../service/save-service';
 import { useNavigate } from 'react-router-dom';
 import { LoaderCircle } from 'lucide-react';
+import Form from '../components/form';
+import InputRoot from '../components/input-root';
+import InputText from '../components/input-text';
+import Span from '../components/span';
+import Button from '../components/button';
 
 function Add() {
   const navigate = useNavigate()
+
   const [loading, setLoading] = useState({
     add: false
   })
-
   const formSchema = z.object({
     name: z.string().nonempty("Campo obrigatório")
   })
@@ -21,7 +26,7 @@ function Add() {
     }
   );
 
-  async function handleAddSave(data: z.infer<typeof formSchema>) {
+  function handleAddSave(data: z.infer<typeof formSchema>) {
     setLoading({ ...loading, add: true })
     saveService.selectFolder().then(e => {
       saveService.add(e.filePaths[0], data.name).then(e => {
@@ -36,11 +41,13 @@ function Add() {
         loading.add ?
           <LoaderCircle className={"rotating-div"} ></LoaderCircle>
           :
-          <form className='flex flex-col gap-3 items-center' onSubmit={handleSubmit(handleAddSave)}>
-            <input {...register("name")} type="text" placeholder='Nome do save' className=' w-full bg-transparent flex items-center border border-zinc-700 outline-none p-1 px-3 rounded' />
-            <button className='bg-white p-1 px-2 rounded text-zinc-800'>Selecionar arquivo e adicionar</button>
-            <span className='text-red-400'>{errors.name?.message}</span>
-          </form>
+          <Form onSubmit={handleSubmit(handleAddSave)}>
+            <InputRoot>
+                <InputText {...register("name")} variation='default-full' placeholder='Nome do save'/>
+                <Span variation='error'>{errors.name?.message}</Span>
+            </InputRoot>
+            <Button>Selecionar arquivo e adicionar</Button>
+          </Form>
       }
     </div>
   )

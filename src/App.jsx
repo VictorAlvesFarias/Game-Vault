@@ -26,7 +26,7 @@ function App() {
                 <div onClick={electronService.minimize} className='h-full p-2 hover:bg-zinc-100 hover:bg-opacity-10 cursor-pointer'>
                   <Minus strokeWidth={1.3} className='w-5' />
                 </div>
-                <div onClick={electronService.maximize} className='h-full p-2 hover:bg-zinc-100 hover:bg-opacity-10 cursor-pointer'>
+                <div onClick={()=>electronService.isMaximizable()? electronService.maximize():electronService.minimizable()} className='h-full p-2 hover:bg-zinc-100 hover:bg-opacity-10 cursor-pointer'>
                   <Maximize2 strokeWidth={1.3} className='w-5'></Maximize2>
                 </div>
                 <div onClick={electronService.close} className='h-full p-2 hover:bg-red-500 cursor-pointer'>
