@@ -1,3 +1,4 @@
+import { WatchEventType } from 'fs';
 import { v4 as uid } from 'uuid';
 
 export class SaveItem {
@@ -9,29 +10,35 @@ export class SaveItem {
         public name: string,
         public id: string,
         public sync?: boolean | undefined,
-        public loading?: boolean | undefined
+
     ) { }
 }
 
 export class SaveService {
     public counter: number = 0
 
-    public async add(originPath, name) {
+    public async add(originPath: string, name: string) {
         const saveContext = this.document();
         const folder = this.splitFolderName(originPath);
-        const guid = uid()
-        const folderLocalSavePath = `./saves/${guid}/${folder}`
+        const guid = uid();
+        
+        // Define o caminho da pasta inicial com índice 1
+        const folderLocalSavePath = `./saves/${guid}/1/${folder}`;
+        
         const newSave = new SaveItem(
-            folderLocalSavePath,
+            `./saves/${guid}`,    // Diretório base para salvamentos desse item
             originPath,
             folder,
-            await this.getDirSize(originPath), // Aguarde a obtenção do tamanho
+            await this.getDirSize(originPath),
             name,
             guid
         );
-
+    
+        // Adiciona o novo save ao contexto e cria a pasta com índice 1
         saveContext.push(newSave);
+        await window.node.fs.promises.mkdir(`./saves/${guid}/1`, { recursive: true });
         await window.node.fs.promises.cp(originPath, folderLocalSavePath, { recursive: true });
+        
         await window.node.fs.promises.writeFile('./saves/save.json', JSON.stringify(saveContext));
     }
     public async get(): Promise<SaveItem[]> {
@@ -65,10 +72,10 @@ export class SaveService {
             const filePath = dirPath + '/' + file;
 
             if (await window.node.isDirectory(filePath)) {
-                size += await this.getDirSize(filePath)
+                size += await this.getDirSize(filePath);
             }
             else {
-                const file = await window.node.fs.promises.stat(filePath)
+                const file = await window.node.fs.promises.stat(filePath);
                 size += file.size;
             }
         }
@@ -95,28 +102,43 @@ export class SaveService {
     public selectFolder() {
         return window.node.dialog.showOpenDialog({ properties: ['openDirectory'] });
     }
-    public async sync(id) {
+    public async sync(id: string) {
         const saveContext = this.document();
         const save: SaveItem = this.getById(id);
-        const newSaveSize = await this.getDirSize(save.savePathOrigin)
+        const newSaveSize = await this.getDirSize(save.savePathOrigin);
+        const existingSaves = await window.node.fs.promises.readdir(`./saves/${save.id}`);
+        const indices = existingSaves
+            .map(folder => parseInt(folder))
+            .filter(num => !isNaN(num)); 
+    
+        const newIndex = indices.length > 0 ? Math.max(...indices) + 1 : 1;
+        const newSyncPath = `./saves/${save.id}/${newIndex}`;
+    
+        // Cria a nova pasta e copia o conteúdo atualizado
+        await window.node.fs.promises.mkdir(newSyncPath, { recursive: true });
+        await window.node.fs.promises.cp(save.savePathOrigin, `${newSyncPath}/${save.saveName}`, { recursive: true });
+    
         const newSaveContext = saveContext.map((e) => {
             if (e.id === id) {
                 e.size = newSaveSize;
+                e.sync = true;
             }
-            console.log(e);
             return e;
-        })
-        if (save != null) {
-            save.size = newSaveSize
-            save.sync = true
-            await this.delete(save.id)
-            await window.node.fs.promises.cp(save.savePathOrigin, `./saves/${save.id}/${save.saveName}`, { recursive: true });
-            await window.node.fs.promises.writeFile('./saves/save.json', JSON.stringify(newSaveContext));
-        }
-        return save
+        });
+    
+        await window.node.fs.promises.writeFile('./saves/save.json', JSON.stringify(newSaveContext));
+    
+        return save;
+    }    
+    public fileChanged(saveItem: SaveItem, callback: (e: WatchEventType) => any) {
+        window.node.fs.watch(saveItem.savePathOrigin, (event) => {
+            if (event === 'change') {
+                callback(event);
+            }
+        });
     }
 }
 
-const saveService = new SaveService()
+const saveService = new SaveService();
 
-export default saveService 
+export default saveService;

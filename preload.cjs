@@ -17,7 +17,7 @@ contextBridge.exposeInMainWorld('application', {
     remote.getCurrentWindow().maximize()
   },
   minimizable: () => {
-    remote.getCurrentWindow().minimizable()
+    remote.getCurrentWindow().minimize()
   },
   maximizable: () => {
     remote.getCurrentWindow().maximizable()
