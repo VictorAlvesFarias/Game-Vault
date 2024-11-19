@@ -43,10 +43,10 @@ function Add() {
           :
           <Form onSubmit={handleSubmit(handleAddSave)}>
             <InputRoot>
-                <InputText {...register("name")} variation='default-full' placeholder='Nome do save'/>
+                <InputText {...register("name")} variation='default-full' placeholder='Save name'/>
                 <Span variation='error'>{errors.name?.message}</Span>
             </InputRoot>
-            <Button>Selecionar arquivo e adicionar</Button>
+            <Button>Select and add folder</Button>
           </Form>
       }
     </div>

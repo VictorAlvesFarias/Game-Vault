@@ -17,7 +17,7 @@ function App() {
             <nav className=' flex items-center border-b border-b-zinc-700 '>
               <div className='p-3 text-nowrap flex gap-3'>
                 <Link to={"/"}>Home</Link>
-                <Link to={"/add"}>Adicioar</Link>
+                <Link to={"/add"}>Add</Link>
               </div>
               <div className='titlebar w-full'>
                 <div className='h-5 m-2'></div>
