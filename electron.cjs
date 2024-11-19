@@ -21,6 +21,7 @@ function createWindow() {
 
     window.frame = new BrowserWindow({
       width: 800,
+      icon: './src/public/assets/icons/game-vault.png',
       height: 600,
       webPreferences: {
         nodeIntegration: true,

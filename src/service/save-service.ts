@@ -10,7 +10,8 @@ export class SaveItem {
         public name: string,
         public id: string,
         public sync?: boolean | undefined,
-
+        public versions?: boolean,
+        public saveWithRachChange?: boolean
     ) { }
 }
 
@@ -21,10 +22,10 @@ export class SaveService {
         const saveContext = this.document();
         const folder = this.splitFolderName(originPath);
         const guid = uid();
-        
+
         // Define o caminho da pasta inicial com índice 1
         const folderLocalSavePath = `./saves/${guid}/1/${folder}`;
-        
+
         const newSave = new SaveItem(
             `./saves/${guid}`,    // Diretório base para salvamentos desse item
             originPath,
@@ -33,17 +34,17 @@ export class SaveService {
             name,
             guid
         );
-    
+
         // Adiciona o novo save ao contexto e cria a pasta com índice 1
         saveContext.push(newSave);
         await window.node.fs.promises.mkdir(`./saves/${guid}/1`, { recursive: true });
         await window.node.fs.promises.cp(originPath, folderLocalSavePath, { recursive: true });
-        
+
         await window.node.fs.promises.writeFile('./saves/save.json', JSON.stringify(saveContext));
     }
     public async get(): Promise<SaveItem[]> {
         try {
-            let saveContext:Promise<SaveItem>[] = this.document().map(async (e: SaveItem) => {
+            let saveContext: Promise<SaveItem>[] = this.document().map(async (e: SaveItem) => {
                 const sync = e.size == await this.getDirSize(e.savePathOrigin);
                 return { ...e, sync };
             });
@@ -106,18 +107,23 @@ export class SaveService {
         const saveContext = this.document();
         const save: SaveItem = this.getById(id);
         const newSaveSize = await this.getDirSize(save.savePathOrigin);
-        const existingSaves = await window.node.fs.promises.readdir(`./saves/${save.id}`);
-        const indices = existingSaves
-            .map(folder => parseInt(folder))
-            .filter(num => !isNaN(num)); 
-    
-        const newIndex = indices.length > 0 ? Math.max(...indices) + 1 : 1;
-        const newSyncPath = `./saves/${save.id}/${newIndex}`;
-    
-        // Cria a nova pasta e copia o conteúdo atualizado
-        await window.node.fs.promises.mkdir(newSyncPath, { recursive: true });
+        let newSyncPath;
+
+        if (save.versions) {
+            const existingSaves = await window.node.fs.promises.readdir(`./saves/${save.id}`);
+            const indices = existingSaves
+                .map(folder => parseInt(folder))
+                .filter(num => !isNaN(num));
+            const newIndex = indices.length > 0 ? Math.max(...indices) + 1 : 1;
+
+            newSyncPath = `./saves/${save.id}/${newIndex}`;
+
+            await window.node.fs.promises.mkdir(newSyncPath, { recursive: true });
+        } else {
+            newSyncPath = `./saves/${save.id}/static`;
+        }
         await window.node.fs.promises.cp(save.savePathOrigin, `${newSyncPath}/${save.saveName}`, { recursive: true });
-    
+
         const newSaveContext = saveContext.map((e) => {
             if (e.id === id) {
                 e.size = newSaveSize;
@@ -125,11 +131,11 @@ export class SaveService {
             }
             return e;
         });
-    
+
         await window.node.fs.promises.writeFile('./saves/save.json', JSON.stringify(newSaveContext));
-    
+
         return save;
-    }    
+    }
     public fileChanged(saveItem: SaveItem, callback: (e: WatchEventType) => any) {
         window.node.fs.watch(saveItem.savePathOrigin, (event) => {
             if (event === 'change') {
@@ -137,6 +143,21 @@ export class SaveService {
             }
         });
     }
+    public async update(id: string, data: Partial<SaveItem>): Promise<SaveItem | null> {
+        const saveContext = this.document();
+        const saveIndex = saveContext.findIndex((e) => e.id === id);
+
+        if (saveIndex === -1) return null; // Retorna null se o item não for encontrado
+
+        // Atualiza apenas as propriedades fornecidas no objeto `data`
+        const updatedSave = { ...saveContext[saveIndex], ...data };
+        saveContext[saveIndex] = updatedSave;
+
+        // Salva o contexto atualizado no arquivo `save.json`
+        await window.node.fs.promises.writeFile('./saves/save.json', JSON.stringify(saveContext));
+        return updatedSave;
+    }
+
 }
 
 const saveService = new SaveService();
