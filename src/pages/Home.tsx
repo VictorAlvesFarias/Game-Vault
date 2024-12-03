@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Check, LoaderCircle, RefreshCcw, Trash } from 'lucide-react';
-import { SaveItem } from '../service/save-service';
-import saveService from '../service/save-service';
+import saveService, { SaveItem } from '../service/save-service';
 import InputText from '../components/input-text';
 import AccordionRoot from '../components/accordion-root';
 import Accordion from '../components/accordion';
@@ -15,7 +14,7 @@ import Label from '../components/label';
 function Home({ starter }) {
   const [saves, setSaves] = useState<SaveItem[]>([])
   const [updatingSaves, setUpdatingSaves] = useState<string[]>([])
-  const [filter, setFilter] = useState<string>()
+  const [filter, setFilter] = useState<string>("")
   const [loading, setLoading] = useState({
     files: true
   })
@@ -25,7 +24,39 @@ function Home({ starter }) {
       handleGetSaves()
     })
   }
-  function handleSetSyncSave(item: SaveItem) {
+  function handleFilter(e) {
+    setFilter(e.target.value)
+  }
+  function handleUpdate(partial: Partial<SaveItem>, id: string) {
+    saveService.update(id, partial)
+
+    setSaves(saves =>
+      saves.map(save => {
+        if (save.id === id) {
+          saveService.setWatcherEvent(save.savePathOrigin, () => watcherEvents(save));
+
+          return { ...save, ...partial };
+        }
+        return save;
+      })
+    );
+  }
+  function handleGetSaves() {
+    setLoading({ ...loading, files: true })
+
+    saveService.get()
+      .then((context: SaveItem[]) => {
+        context.forEach(e => {
+          saveService.setWatcherEvent(e.savePathOrigin, () => watcherEvents(e))
+        })
+
+        setSaves(context)
+      })
+      .finally(() => {
+        setLoading({ ...loading, files: false })
+      })
+  }
+  function setSyncSave(item: SaveItem) {
     setSaves(saves => saves.map(e => {
       if (e.id == item.id) {
         item.sync = true
@@ -37,7 +68,7 @@ function Home({ starter }) {
       }
     }))
   }
-  function handleSetNotSyncSave(item: SaveItem) {
+  function setNotSyncSave(item: SaveItem) {
     setSaves(saves => saves.map(e => {
       if (e.id == item.id) {
         item.sync = false
@@ -49,48 +80,21 @@ function Home({ starter }) {
       }
     }))
   }
-  function handleSyncSave(item: SaveItem) {
+  function syncSave(item: SaveItem) {
     setUpdatingSaves([...updatingSaves, item.id])
 
     saveService.sync(item.id)
       .then(e => {
         setUpdatingSaves(updatingSaves.filter(e => e != item.id))
-        handleSetSyncSave(item)
+        setSyncSave(item)
       })
   }
-  function handleGetSaves() {
-    setLoading({ ...loading, files: true })
+  function watcherEvents(saveItem: SaveItem) {
+    setNotSyncSave(saveItem)
 
-    saveService.get().then((x: SaveItem[]) => {
-      setSaves(
-        x.map(e => {
-          saveService.fileChanged(e, () => {
-            handleSetNotSyncSave(e)
-            if (e.saveWithRachChange) {
-              handleSyncSave(e)
-            }
-          })
-          return e
-        })
-      )
-    }).finally(() => {
-      setLoading({ ...loading, files: false })
-    })
-  }
-  function handleFilter(e) {
-    setFilter(e.target.value)
-  }
-  function handleUpdateSaveItem(partial: Partial<SaveItem>, id: string) {
-    saveService.update(id, partial)
-
-    setSaves(saves =>
-      saves.map(save => {
-        if (save.id === id) {
-          return { ...save, ...partial };
-        }
-        return save;
-      })
-    );
+    if (saveItem.saveWithRachChange) {
+      syncSave(saveItem)
+    }
   }
 
   useEffect(() => {
@@ -114,7 +118,7 @@ function Home({ starter }) {
                 <LoaderCircle className='rotating-div' ></LoaderCircle>
               </div>
               :
-              saves?.filter(e => e.saveName.includes(filter ?? "")).length == 0 ?
+              saves?.filter(e => e.saveName.includes(filter)).length == 0 ?
                 <div className='h-full w-full items-center justify-center flex'>
                   Results not found
                 </div>
@@ -122,7 +126,7 @@ function Home({ starter }) {
                 <div>
                   {
                     (
-                      saves?.filter(e => e.saveName.includes(filter ?? "")).map((x, i: any) =>
+                      saves?.filter(e => e.saveName.includes(filter)).map((x, i: any) =>
                         <div key={i} className='pt-6 rounded  flex flex-col relative gap-3'>
                           <AccordionContext>
                             <AccordionRoot>
@@ -130,7 +134,7 @@ function Home({ starter }) {
                                 <div className='p-3 rounded flex justify-between items-center hover:bg-zinc-800'>
                                   <p className={(x.sync ? '' : 'text-red-400 ') + 'text-sm'}>{x.name}</p>
                                   <div className=' flex gap-3'>
-                                    <div onClick={() => handleSyncSave(x)} className='h-full p-2 hover:bg-zinc-100 hover:bg-opacity-10 cursor-pointer'>
+                                    <div onClick={() => syncSave(x)} className='h-full p-2 hover:bg-zinc-100 hover:bg-opacity-10 cursor-pointer'>
                                       {
                                         updatingSaves.includes(x.id) ?
                                           <RefreshCcw className='w-5 rotating-div' /> :
@@ -148,9 +152,9 @@ function Home({ starter }) {
                                 <div className='p-3 flex flex-col gap-3'>
                                   <InputRoot variation='checkbox'>
                                     <Checkbox
-                                      onChange={() => handleUpdateSaveItem({ saveWithRachChange: !x.saveWithRachChange }, x.id)}
+                                      onChange={() => handleUpdate({ saveWithRachChange: !x.saveWithRachChange }, x.id)}
                                       checked={x.saveWithRachChange}
-                                      value={x.saveWithRachChange??"false"}
+                                      value={x.saveWithRachChange ?? "false"}
                                       data="true"
                                     >
                                       <Check />
@@ -159,9 +163,9 @@ function Home({ starter }) {
                                   </InputRoot>
                                   <InputRoot variation='checkbox'>
                                     <Checkbox
-                                      onChange={() => handleUpdateSaveItem({ versions: !x.versions }, x.id)}
+                                      onChange={() => handleUpdate({ versions: !x.versions }, x.id)}
                                       checked={x.versions}
-                                      value={x.versions??"false"}
+                                      value={x.versions ?? "false"}
                                       data="true"
                                     >
                                       <Check />

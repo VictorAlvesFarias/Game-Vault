@@ -1,4 +1,3 @@
-import { WatchEventType } from 'fs';
 import { v4 as uid } from 'uuid';
 
 export class SaveItem {
@@ -15,8 +14,16 @@ export class SaveItem {
     ) { }
 }
 
+export class Event {
+    constructor(
+        public watcher,
+        public path,
+    ) { }
+}
+
 export class SaveService {
     public counter: number = 0
+    public subscriptions: Event[] = []
 
     public async add(originPath: string, name: string) {
         const saveContext = this.document();
@@ -136,12 +143,26 @@ export class SaveService {
 
         return save;
     }
-    public fileChanged(saveItem: SaveItem, callback: (e: WatchEventType) => any) {
-        window.node.fs.watch(saveItem.savePathOrigin, (event) => {
+    public setWatcherEvent(path: string, callback: (e) => any) {
+        const watchers = this.subscriptions.filter(e => e.path)
+
+        if (watchers.length > 0) {
+            watchers.forEach(e => {
+                //e.watcher.close()
+            })
+        }
+
+        this.subscriptions = this.subscriptions.filter(e => !watchers.some(s => s.path == e.path))
+
+        const watcher = window.node.fs.watch(path, (event) => {
             if (event === 'change') {
                 callback(event);
             }
         });
+
+        const event = new Event(watcher, path)
+
+        this.subscriptions.push(event)
     }
     public async update(id: string, data: Partial<SaveItem>): Promise<SaveItem | null> {
         const saveContext = this.document();
@@ -157,7 +178,6 @@ export class SaveService {
         await window.node.fs.promises.writeFile('./saves/save.json', JSON.stringify(saveContext));
         return updatedSave;
     }
-
 }
 
 const saveService = new SaveService();
