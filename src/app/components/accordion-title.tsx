@@ -8,7 +8,7 @@ const AccordionTitleVariations = {
             <AccordionTitleContainer
                 {...props}
                 ref={ref}
-                className='' />
+                 />
         )
     }
 }
