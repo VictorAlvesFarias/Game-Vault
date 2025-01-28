@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "es2016",
+    "module": "commonjs",
+    "rootDir": "./src",
+    "outDir": "./dist-api",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "noImplicitAny": false, // Permite o uso de 'any'
+    "jsx": "react-jsx", // Habilita a sintaxe JSX do React
+    "allowJs": true // Permite arquivos .js no projeto, caso necessário
+  },
+  "include": [
+    "src/**/*.tsx", // Inclui arquivos .tsx
+    "src/**/*.ts"   // Inclui arquivos .ts também
+  ]
+}
