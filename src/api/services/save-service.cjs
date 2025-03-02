@@ -1,125 +1,86 @@
 const { v4: uid } = require('uuid');
 const fs = require('fs');
-
-class SaveItem {
-    constructor(
-        saveLocal,
-        savePathOrigin,
-        saveName,
-        size,
-        name,
-        id,
-        sync = undefined,
-        versions = undefined,
-        saveWithRachChange = undefined
-    ) {
-        this.saveLocal = saveLocal;
-        this.savePathOrigin = savePathOrigin;
-        this.saveName = saveName;
-        this.size = size;
-        this.name = name;
-        this.id = id;
-        this.sync = sync;
-        this.versions = versions;
-        this.saveWithRachChange = saveWithRachChange;
-    }
-}
-
-class Event {
-    constructor(watcher, path) {
-        this.watcher = watcher;
-        this.path = path;
-    }
-}
+const BaseResponse = require('../entities/base-response.cjs')
+const SaveItem = require('../entities/save-item.cjs')
+const saveRepository = require('../repositories/save-repository.cjs')
 
 class SaveService {
     constructor() {
-        this.counter = 0;
-        this.subscriptions = [];
     }
 
     async add(originPath, name) {
-        const saveContext = this.document();
-        const folder = this.splitFolderName(originPath);
+        const response = new BaseResponse()
+        const saveContext = saveRepository.document().data;
+        const folder = saveRepository.splitFolderName(originPath);
         const guid = uid();
-
         const folderLocalSavePath = `./saves/${guid}/1/${folder}`;
 
         const newSave = new SaveItem(
-            `./saves/${guid}`,    // Diretório base para salvamentos desse item
+            `./saves/${guid}`,
             originPath,
             folder,
-            await this.getDirSize(originPath),
+            await saveRepository.getDirSize(originPath),
             name,
-            guid
+            guid,
+            false
         );
 
-        // Adiciona o novo save ao contexto e cria a pasta com índice 1
-        saveContext.push(newSave);
+        saveContext.push(newSave)
+
         await fs.promises.mkdir(`./saves/${guid}/1`, { recursive: true });
         await fs.promises.cp(originPath, folderLocalSavePath, { recursive: true })
         await fs.promises.writeFile('./saves/save.json', JSON.stringify(saveContext));
+
+        response.data = newSave
+
+        return response
     }
     async get() {
-        let saveContext = this.document().map(async (e) => {
-            const sync = e.size == await this.getDirSize(e.savePathOrigin);
-            return { ...e, sync };
-        });
+        const response = new BaseResponse()
+        const saveContext = await Promise.all(saveRepository.document().data
+            .map(async (e) => {
+                if (fs.existsSync(e.savePathOrigin)) {
+                    const sync = e.size == await saveRepository.getDirSize(e.savePathOrigin);
 
-        return Promise.all(saveContext);
+                    return { ...e, sync };
+                }
+                else {
+                    return { ...e, sync: false, folderIsNotFound: true }
+                }
+            }));
 
+        response.data = {
+            list: saveContext,
+            hash: saveRepository.hashList(saveRepository.document())
+        }
+
+        return response
     }
     async delete(id) {
-        const newSaveContext = this.document().filter(e => e.id != id);
-        const save = this.getById(id);
+        const response = new BaseResponse()
+        const saveContext = saveRepository.document().data
+        const newSaveContext = saveContext.filter(e => e.id != id);
+        const save = saveContext.find(e => e.id == id)
 
         await fs.promises.cp(save.saveLocal, `./trash/${save.id}/${save.saveName}`, { recursive: true });
         await fs.promises.rmdir(`./saves/${save.id}`, { recursive: true });
         await fs.promises.writeFile('./saves/save.json', JSON.stringify(newSaveContext));
 
-        return newSaveContext;
-    }
-    async getDirSize(dirPath) {
-        let size = 0;
-        const files = await fs.promises.readdir(dirPath);
-
-        for (let file of files) {
-            this.counter++
-            const filePath = dirPath + '/' + file;
-
-            if (await fs.promises.stat(filePath).then(stat => stat.isDirectory())) {
-                size += await this.getDirSize(filePath);
-            }
-            else {
-                const file = await fs.promises.stat(filePath);
-                size += file.size;
-            }
-        }
-        return size;
-    }
-    document() {
-        let saveContext = JSON.parse(
-            fs.existsSync('./saves/save.json') ?
-                fs.readFileSync('./saves/save.json', "utf-8")
-                :
-                'null'
-        ) ?? [];
-
-        return saveContext;
-    }
-    getById(id) {
-        const result = this.document()?.filter(e => e.id == id)[0];
-        return result;
-    }
-    splitFolderName(path) {
-        const result = path.split('\\')[path.split('\\').length - 1];
-        return result;
+        return response;
     }
     async sync(id) {
-        const saveContext = this.document();
-        const save = this.getById(id);
-        const newSaveSize = await this.getDirSize(save.savePathOrigin);
+        const response = new BaseResponse()
+        const saveContext = saveRepository.document().data;
+        const save = saveContext.find(e => e.id == id);
         let newSyncPath;
+
+        if (!fs.existsSync(save.savePathOrigin)) {
+            response.addError("Origin folder is not found")
+
+            return response
+        }
+
+        const newSaveSize = await saveRepository.getDirSize(save.savePathOrigin);
 
         if (save.versions) {
             const existingSaves = await fs.promises.readdir(`./saves/${save.id}`);
@@ -131,9 +92,11 @@ class SaveService {
             newSyncPath = `./saves/${save.id}/${newIndex}`;
 
             await fs.promises.mkdir(newSyncPath, { recursive: true });
-        } else {
+        }
+        else {
             newSyncPath = `./saves/${save.id}/static`;
         }
+
         await fs.promises.cp(save.savePathOrigin, `${newSyncPath}/${save.saveName}`, { recursive: true });
 
         const newSaveContext = saveContext.map((e) => {
@@ -146,42 +109,36 @@ class SaveService {
 
         await fs.promises.writeFile('./saves/save.json', JSON.stringify(newSaveContext));
 
-        return save;
+        response.data = save
+
+        return response;
     }
-
-    setWatcherEvent(folderPath, callback) {
-        const watchers = this.subscriptions.filter(e => e.path);
-
-        if (watchers.length > 0) {
-            watchers.forEach(e => {
-                e.watcher.close()
-            });
-        }
-
-        this.subscriptions = this.subscriptions.filter(e => !watchers.some(s => s.path === e.path));
-
-        const watcher = fs.watch(folderPath, (event) => {
-            if (event === 'change') {
-                callback(event);
-            }
-        });
-
-        const event = new Event(watcher, folderPath);
-
-        this.subscriptions.push(event);
-    }
-
     async update(id, data) {
-        const saveContext = this.document();
+        const response = new BaseResponse()
+        const saveContext = saveRepository.document().data;
         const saveIndex = saveContext.findIndex((e) => e.id === id);
 
-        if (saveIndex === -1) return null;
+        if (saveIndex === -1) {
+            response.addError("Item not found")
+
+            return response
+        };
+
+        if (fs.existsSync(data.savePathOrigin)) {
+            data.folderIsNotFound = false
+        }
+        else {
+            data.folderIsNotFound = true
+        }
 
         const updatedSave = { ...saveContext[saveIndex], ...data };
         saveContext[saveIndex] = updatedSave;
 
         await fs.promises.writeFile('./saves/save.json', JSON.stringify(saveContext));
-        return updatedSave;
+
+        response.data = updatedSave
+
+        return response;
     }
 }
 

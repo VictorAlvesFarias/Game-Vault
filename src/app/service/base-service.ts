@@ -1,7 +1,7 @@
 import axios, { Axios, AxiosHeaders, AxiosProgressEvent, AxiosRequestConfig } from 'axios'
 import Cookies from 'js-cookie'
 import { useErrors } from '../utils/hooks/errors-hooks'
-import { IBaseResponseApi } from '../interfaces/shared/base-response-api'
+import { IBaseResponse } from '../interfaces/shared/base-response-api'
 import { IAxios } from '../interfaces/shared/axios'
 
 export interface Route {

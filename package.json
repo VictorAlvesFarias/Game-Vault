@@ -27,6 +27,7 @@
     "axios": "^1.5.1",
     "concurrently": "^8.2.2",
     "cors": "^2.8.5",
+    "crypto": "^1.0.1",
     "express": "^4.21.1",
     "js-cookie": "^3.0.5",
     "js-guid": "^1.0.2",
@@ -39,8 +40,8 @@
     "react-router-dom": "^6.16.0",
     "react-toastify": "^9.1.3",
     "uuid": "^10.0.0",
-    "zod": "^3.21.4",
-    "ws": "^8.13.0"
+    "ws": "^8.13.0",
+    "zod": "^3.21.4"
   },
   "devDependencies": {
     "@electron-forge/plugin-webpack": "^7.3.1",

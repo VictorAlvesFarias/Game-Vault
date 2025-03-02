@@ -1,5 +1,5 @@
 import { BaseService, Route } from './base-service';
-import { IBaseResponseApi } from '../interfaces/shared/base-response-api';
+import { IBaseResponse } from '../interfaces/shared/base-response-api';
 import { IAxios } from '../interfaces/shared/axios';
 import { AxiosRequestConfig } from 'axios';
 import { env } from '../environment';
@@ -14,6 +14,7 @@ export interface ISaveItem {
     sync?: boolean;
     versions?: any;
     saveWithRachChange?: any;
+    folderIsNotFound: boolean
 }
 
 export interface ISaveServiceResponse<T> {
@@ -32,7 +33,7 @@ export class SaveService extends BaseService {
         saveItem.savePathOrigin = await window.node.dialog.showOpenDialog({ properties: ['openDirectory'] })
             .then(e => e.filePaths[0]);
 
-        const result = this.post<ISaveItem>({
+        const result = await this.post<ISaveItem>({
             api: env,
             href: '/add',
             params: {}
@@ -41,8 +42,15 @@ export class SaveService extends BaseService {
         return result;
     }
 
-    public getSaves() {
-        const result = this.get<ISaveItem[]>({
+    public async getPath() {
+        const path = await window.node.dialog.showOpenDialog({ properties: ['openDirectory'] })
+            .then(e => e.filePaths[0]);
+
+        return path
+    }
+
+    public async getSaves() {
+        const result = await this.get<IBaseResponse<{ list: ISaveItem[], hash: string }>>({
             api: env,
             href: '/get-documents',
             params: {}
@@ -51,8 +59,8 @@ export class SaveService extends BaseService {
         return result;
     }
 
-    public deleteSave(id: string) {
-        const result = this.delete<null>({
+    public async deleteSave(id: string) {
+        const result = await this.delete<null>({
             api: env,
             href: `/delete/${id}`,
             params: {}
@@ -61,32 +69,22 @@ export class SaveService extends BaseService {
         return result;
     }
 
-    public syncSave(id: string) {
-        const result = this.post<ISaveItem>({
+    public async syncSave(id: string) {
+        const result = await this.post<ISaveItem>({
             api: env,
             href: `/sync/${id}`,
             params: {}
-        },{});
+        }, {});
 
         return result;
     }
 
-    public updateSave(id: string, data: Partial<ISaveItem>) {
-        const result = this.put<ISaveItem>({
+    public async updateSave(id: string, data: Partial<ISaveItem>) {
+        const result = await this.put<IBaseResponse<ISaveItem>>({
             api: env,
             href: `/update/${id}`,
             params: {}
         }, data);
-
-        return result;
-    }
-
-    public getSaveById(id: string) {
-        const result = this.get<ISaveItem>({
-            api: env,
-            href: `/get/${id}`,
-            params: {}
-        });
 
         return result;
     }
